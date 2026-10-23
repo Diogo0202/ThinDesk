@@ -1,1 +1,54 @@
-# ThinDesk
+# ThinDesk: chamados técnicos
+
+Aplicação Spring Boot com login por formulário, API REST de chamados e persistência no MongoDB. O mesmo login atende as páginas existentes e os quatro endpoints da API. Para testar a API no Postman ou Insomnia, selecione **Basic Auth**.
+
+## Objetivos da entrega
+
+- [x] Abrir chamado com título e descrição, registrando o usuário autenticado, a data e o status `ABERTO`.
+- [x] Listar chamados por usuário e consultar um chamado por ID.
+- [x] Registrar solução, técnico e data ao mudar o status para `RESOLVIDO`.
+- [x] Restringir a resolução ao técnico e impedir nova alteração de um chamado resolvido.
+- [x] Gravar os chamados na coleção `chamados` do MongoDB.
+- [x] Passar os testes automatizados de serviço e API.
+- [ ] Publicar o projeto no GitHub e informar a URL do repositório.
+- [ ] Gravar e enviar um vídeo da tela, com até 5 minutos, mostrando os endpoints e o documento gravado no MongoDB.
+
+## Executar
+
+Requisitos: Java 21, MongoDB e acesso às dependências Maven. No PowerShell:
+
+```powershell
+$env:MONGODB_URI = 'mongodb://localhost:27017/thindesk'
+$env:THINDESK_ADMIN_PASSWORD = '<senha-do-tecnico>'
+$env:THINDESK_USER_USERNAME = 'ana'
+$env:THINDESK_USER_PASSWORD = '<senha-do-solicitante>'
+.\mvnw.cmd spring-boot:run
+```
+
+`THINDESK_ADMIN_PASSWORD` é obrigatória. A conta técnica usa o nome `admin`. As duas variáveis `THINDESK_USER_*` criam uma conta comum para testar abertura e acompanhamento. A URI do MongoDB assume `mongodb://localhost:27017/thindesk` quando a variável não está definida. As senhas devem ficar fora do repositório.
+
+## API
+
+| Método | Rota | Permissão | Corpo |
+| --- | --- | --- | --- |
+| POST | `/api/chamados` | Usuário autenticado | `{"titulo":"Impressora sem rede","descricao":"Não responde ao ping"}` |
+| GET | `/api/chamados/usuario/{id}` | O próprio usuário ou técnico | Nenhum |
+| GET | `/api/chamados/{id}` | Solicitante ou técnico | Nenhum |
+| PUT | `/api/chamados/{id}/resolver` | Técnico | `{"solucao":"Cabo de rede substituído"}` |
+
+Na rota de listagem, `{id}` é o **nome de login** do solicitante, como `ana`. O corpo de abertura não define solicitante, status ou datas. A API extrai o solicitante da autenticação. A conta `admin` atua como técnico. O campo `tipo` continua opcional por compatibilidade com os registros antigos.
+
+### Roteiro de demonstração
+
+1. Inicie o MongoDB e a aplicação. No Postman, configure Basic Auth com a conta comum e envie o `POST`. Guarde o `id` retornado e confira `ABERTO`, `usuario` e `dataAbertura`.
+2. Com a mesma conta, chame `GET /api/chamados/usuario/ana` e `GET /api/chamados/{id}`. Consulte um nome de outro usuário para mostrar o bloqueio de acesso.
+3. Tente resolver com a conta comum. Depois use a conta técnica e envie o `PUT` com a solução. Confira `RESOLVIDO`, `tecnico` e `dataResolucao`. Repita o `PUT` para mostrar o bloqueio.
+4. No `mongosh`, execute `use thindesk` e `db.chamados.findOne({ _id: ObjectId("<id>") })` para exibir o documento persistido. Grave diretamente a tela do computador e mantenha o vídeo abaixo de 5 minutos.
+
+## Testes
+
+```powershell
+.\mvnw.cmd test
+```
+
+Os testes automatizados validam as regras e as respostas HTTP. A prova de persistência real exige MongoDB ativo; o roteiro acima cobre essa etapa.
