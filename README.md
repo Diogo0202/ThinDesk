@@ -10,8 +10,8 @@ Aplicação Spring Boot com login por formulário, API REST de chamados e persis
 - [x] Restringir a resolução ao técnico e impedir nova alteração de um chamado resolvido.
 - [x] Gravar os chamados na coleção `chamados` do MongoDB.
 - [x] Passar os testes automatizados de serviço e API.
-- [ ] Publicar o projeto no GitHub e informar a URL do repositório.
-- [ ] Gravar e enviar um vídeo da tela, com até 5 minutos, mostrando os endpoints e o documento gravado no MongoDB.
+- [x] Publicar o projeto no [GitHub](https://github.com/Diogo0202/ThinDesk).
+- [x] Gravar e enviar um [vídeo da tela de 50 segundos](docs/demo-thindesk.mp4), mostrando os endpoints e o documento gravado no MongoDB.
 
 ## Executar
 
@@ -44,6 +44,8 @@ Na rota de listagem, `{id}` é o **nome de login** do solicitante, como `ana`. O
 2. Com a mesma conta, chame `GET /api/chamados/usuario/ana` e `GET /api/chamados/{id}`. Consulte um nome de outro usuário para mostrar o bloqueio de acesso.
 3. Tente resolver com a conta comum. Depois use a conta técnica e envie o `PUT` com a solução. Confira `RESOLVIDO`, `tecnico` e `dataResolucao`. Repita o `PUT` para mostrar o bloqueio.
 4. No `mongosh`, execute `use thindesk` e `db.chamados.findOne({ _id: ObjectId("<id>") })` para exibir o documento persistido. Grave diretamente a tela do computador e mantenha o vídeo abaixo de 5 minutos.
+
+O [vídeo entregue](docs/demo-thindesk.mp4) mostra as chamadas por um cliente HTTP em PowerShell, ferramenta equivalente ao Postman, e uma leitura direta do documento no MongoDB local. Para repetir as chamadas, execute `scripts/demo-api.ps1` com a aplicação em execução e as variáveis de senha configuradas.
 
 ## Testes
 
