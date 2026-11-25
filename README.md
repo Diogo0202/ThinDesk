@@ -4,10 +4,9 @@ Aplicação Spring Boot com login por formulário, API REST de chamados e persis
 
 ## Acesso ao ThinDesk
 
+- [Abrir o beta na Vercel](https://thindesk.vercel.app/login). Entre com uma das contas do projeto.
 - [Abrir o aplicativo local](http://localhost:8080/login) após [iniciar o Spring Boot e o MongoDB](#executar).
 - [Assistir à demonstração](docs/demo-thindesk.mp4) das chamadas à API e da gravação no MongoDB.
-
-O beta aguarda publicação na Vercel. A URL pública será adicionada aqui após a validação do deploy. [Configuração para publicar na Vercel](#vercel)
 
 ## Capturas do painel
 
@@ -86,7 +85,7 @@ Os testes automatizados validam as regras e as respostas HTTP. A prova de persis
 
 ## Vercel
 
-O [runtime de contêiner da Vercel](https://vercel.com/docs/functions/runtimes/container) detecta `Dockerfile.vercel` na raiz. A imagem empacota o Spring Boot com Java 21. O perfil `vercel` grava as sessões no mesmo MongoDB dos chamados para que uma nova instância reconheça o login.
+O arquivo `vercel.json` seleciona o [runtime de contêiner da Vercel](https://vercel.com/docs/functions/runtimes/container). A imagem definida em `Dockerfile.vercel` empacota o Spring Boot com Java 21. O perfil `vercel` grava as sessões no mesmo MongoDB dos chamados para que uma nova instância reconheça o login.
 
 Defina estas variáveis no projeto antes de publicar:
 
