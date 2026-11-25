@@ -3,6 +3,11 @@ package com.pfc.thindesk.service;
 import com.pfc.thindesk.entity.Chamado;
 import com.pfc.thindesk.repository.ChamadoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,6 +19,9 @@ public class ChamadoService {
 
     @Autowired
     private ChamadoRepository chamadoRepository;
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     public Chamado criarChamado(Chamado chamado) {
         if (chamado == null) {
@@ -49,36 +57,41 @@ public class ChamadoService {
     public Chamado resolverChamado(String id, String tecnico, String solucao) {
         validarTexto(tecnico, "Técnico");
         validarTexto(solucao, "Solução");
-        Chamado chamado = buscarPorId(id);
-        assegurarAberto(chamado);
-        chamado.setTecnico(tecnico.trim());
-        chamado.setSolucao(solucao.trim());
-        chamado.setStatus("RESOLVIDO");
-        chamado.setDataResolucao(LocalDateTime.now());
-        return chamadoRepository.save(chamado);
+        return atualizarPendente(id, new Update()
+                .set("tecnico", tecnico.trim())
+                .set("solucao", solucao.trim())
+                .set("status", "RESOLVIDO")
+                .set("dataResolucao", LocalDateTime.now()));
     }
 
     public Chamado atualizarChamado(String id, Chamado chamadoAtualizado) {
         if (chamadoAtualizado == null) {
             throw new IllegalArgumentException("Os dados do chamado são obrigatórios.");
         }
-        Chamado chamado = buscarPorId(id);
-        assegurarAberto(chamado);
-        if (chamadoAtualizado.getTitulo() != null && !chamadoAtualizado.getTitulo().isBlank()) {
-            chamado.setTitulo(chamadoAtualizado.getTitulo().trim());
-        }
         validarTexto(chamadoAtualizado.getDescricao(), "Descrição");
-        chamado.setDescricao(chamadoAtualizado.getDescricao().trim());
-        if (chamadoAtualizado.getTipo() != null && !chamadoAtualizado.getTipo().isBlank()) {
-            chamado.setTipo(chamadoAtualizado.getTipo().trim());
+        Update alteracoes = new Update().set("descricao", chamadoAtualizado.getDescricao().trim());
+        if (chamadoAtualizado.getTitulo() != null && !chamadoAtualizado.getTitulo().isBlank()) {
+            alteracoes.set("titulo", chamadoAtualizado.getTitulo().trim());
         }
-        return chamadoRepository.save(chamado);
+        if (chamadoAtualizado.getTipo() != null && !chamadoAtualizado.getTipo().isBlank()) {
+            alteracoes.set("tipo", chamadoAtualizado.getTipo().trim());
+        }
+        return atualizarPendente(id, alteracoes);
     }
 
-    private static void assegurarAberto(Chamado chamado) {
-        if ("RESOLVIDO".equalsIgnoreCase(chamado.getStatus())) {
-            throw new IllegalStateException("Chamados resolvidos não podem ser alterados.");
+    private Chamado atualizarPendente(String id, Update alteracoes) {
+        validarTexto(id, "Id");
+        String chave = id.trim();
+        // O MongoDB confere o status no mesmo passo da gravação para bloquear pedidos simultâneos.
+        Query filtro = Query.query(Criteria.where("_id").is(chave)
+                .and("status").not().regex("^RESOLVIDO$", "i"));
+        Chamado atualizado = mongoTemplate.findAndModify(
+                filtro, alteracoes, FindAndModifyOptions.options().returnNew(true), Chamado.class);
+        if (atualizado != null) {
+            return atualizado;
         }
+        buscarPorId(chave);
+        throw new IllegalStateException("Chamados resolvidos não podem ser alterados.");
     }
 
     private static void validarTexto(String valor, String campo) {

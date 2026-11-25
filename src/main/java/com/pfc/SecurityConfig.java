@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -19,10 +20,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/chamados", "/api/chamados/**"))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/css/**", "/dist/**", "/plugins/**", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/api/chamados/*/resolver").hasRole("TECHNICIAN")
+                .requestMatchers("/clientes", "/api/clientes/**", "/ajustes-horarios", "/api/ajustes-horarios/**").hasRole("TECHNICIAN")
                 .anyRequest().authenticated()
             )
             .httpBasic(basic -> {})
@@ -45,10 +47,11 @@ public class SecurityConfig {
             @Value("${THINDESK_USER_USERNAME:}") String userName,
             @Value("${THINDESK_USER_PASSWORD:}") String userPassword) {
         List<UserDetails> users = new ArrayList<>();
-        users.add(User.withUsername(adminName).password("{noop}" + adminPassword)
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        users.add(User.withUsername(adminName).password("{bcrypt}" + encoder.encode(adminPassword))
                 .roles("TECHNICIAN").build());
         if (!userName.isBlank() && !userPassword.isBlank() && !userName.equals(adminName)) {
-            users.add(User.withUsername(userName).password("{noop}" + userPassword)
+            users.add(User.withUsername(userName).password("{bcrypt}" + encoder.encode(userPassword))
                     .roles("USER").build());
         }
         return new InMemoryUserDetailsManager(users);

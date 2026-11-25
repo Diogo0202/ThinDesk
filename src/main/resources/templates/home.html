@@ -1,6 +1,60 @@
-<div class="container-fluid vh-100 d-flex justify-content-center align-items-center" th:fragment="content">
-    <div class="text-center">
-        <h1>Bem-vindo ao</h1>
-        <img th:src="@{/images/logo.png}" alt="Logo" width="500" height="500">
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Painel | ThinDesk</title>
+    <link rel="stylesheet" th:href="@{/css/painel.css}">
+    <script defer th:src="@{/js/painel.js}"></script>
+</head>
+<body>
+<header class="barra">
+    <a th:href="@{/}">ThinDesk</a>
+    <span class="tag" th:text="${versao}">Beta</span>
+    <form th:action="@{/logout}" method="post"><button class="secundario">Sair</button></form>
+</header>
+<main>
+    <h1>Painel de chamados</h1>
+    <p class="suave" th:text="${tecnico ? 'Fila técnica · ' + usuario : 'Seus chamados · ' + usuario}"></p>
+    <div class="resumo">
+        <div><span>Pendentes</span><strong th:text="${pendentes}">0</strong></div>
+        <div><span>Resolvidos</span><strong th:text="${resolvidos}">0</strong></div>
     </div>
-</div>
+    <div class="grade">
+        <section>
+            <h2>Abrir chamado</h2>
+            <form class="acao" data-method="POST" th:data-url="@{/api/chamados}">
+                <label>Título <input name="titulo" required maxlength="160"></label>
+                <label>Descrição <textarea name="descricao" required maxlength="4000" rows="5"></textarea></label>
+                <p class="erro" role="alert" hidden></p>
+                <button>Registrar chamado</button>
+            </form>
+        </section>
+        <section>
+            <h2 th:text="${tecnico ? 'Fila de chamados' : 'Meus chamados'}">Chamados</h2>
+            <p class="suave" th:if="${chamados.isEmpty()}">Nenhum chamado registrado.</p>
+            <details th:each="chamado : ${chamados}">
+                <summary>
+                    <span th:text="${chamado.titulo ?: 'Chamado ' + chamado.id}">Chamado</span>
+                    <small class="tag" th:text="${chamado.status}">ABERTO</small>
+                </summary>
+                <p class="texto" th:text="${chamado.descricao}"></p>
+                <p class="suave" th:text="${'Solicitante: ' + (chamado.usuario ?: 'Não informado')}"></p>
+                <p class="suave" th:if="${chamado.dataAbertura != null}" th:text="${'Abertura: ' + #temporals.format(chamado.dataAbertura, 'dd/MM/yyyy HH:mm')}"></p>
+                <div th:if="${#strings.equalsIgnoreCase(chamado.status, 'RESOLVIDO')}">
+                    <strong>Solução</strong>
+                    <p class="texto" th:text="${chamado.solucao}"></p>
+                    <p class="suave" th:if="${chamado.dataResolucao != null}" th:text="${'Resolução: ' + #temporals.format(chamado.dataResolucao, 'dd/MM/yyyy HH:mm') + ' · ' + chamado.tecnico}"></p>
+                </div>
+                <form class="acao" data-method="PUT" th:if="${tecnico and !#strings.equalsIgnoreCase(chamado.status, 'RESOLVIDO')}"
+                      th:data-url="@{/api/chamados/{id}/resolver(id=${chamado.id})}">
+                    <label>Solução aplicada <textarea name="solucao" required maxlength="4000" rows="3"></textarea></label>
+                    <p class="erro" role="alert" hidden></p>
+                    <button>Resolver chamado</button>
+                </form>
+            </details>
+        </section>
+    </div>
+</main>
+</body>
+</html>

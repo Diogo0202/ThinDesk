@@ -31,7 +31,7 @@ public class ChamadoController {
         this.chamadoService = chamadoService;
     }
 
-    @PostMapping
+    @PostMapping(consumes = "application/json")
     public ResponseEntity<ChamadoResponse> criarChamado(
             @RequestBody ChamadoRequest request, Principal principal) {
         request.validar();
@@ -59,7 +59,7 @@ public class ChamadoController {
         return ChamadoResponse.de(chamado);
     }
 
-    @PutMapping("/{id}/resolver")
+    @PutMapping(path = "/{id}/resolver", consumes = "application/json")
     public ChamadoResponse resolver(@PathVariable String id,
             @RequestBody ResolverRequest request, Principal principal) {
         request.validar();
@@ -86,7 +86,7 @@ public class ChamadoController {
     }
 
     private void exigirDonoOuTecnico(String usuarioId, Principal principal) {
-        if (!usuarioId.equals(principal.getName()) && !ehTecnico(principal)) {
+        if (!principal.getName().equals(usuarioId) && !ehTecnico(principal)) {
             throw new AccessDeniedException("Sem acesso a este chamado.");
         }
     }

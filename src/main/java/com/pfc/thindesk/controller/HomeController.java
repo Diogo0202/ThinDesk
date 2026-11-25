@@ -9,13 +9,14 @@ import com.pfc.thindesk.service.ClienteService;
 import com.pfc.thindesk.service.ChamadoService;
 import com.pfc.thindesk.service.HorarioAtendimentoService;
 import java.util.List;
+import java.util.Comparator;
 import java.security.Principal;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 
 @Controller
 public class HomeController {
@@ -29,32 +30,29 @@ public class HomeController {
     @Autowired
     private HorarioAtendimentoService horarioAtendimentoService;
 
+    @Autowired
+    private BuildProperties buildProperties;
+
     @GetMapping("/login")
     public String login() {
         return "login";
     }
 
-    @GetMapping("/")
-    public ModelAndView home() {
-        ModelAndView modelAndView = new ModelAndView("layout");
-        String fragment = "home :: content";
-        log.info("Carregando fragmento: {}", fragment); // Log para depuração
-        modelAndView.addObject("content", fragment);
-        return modelAndView;
-    }
-
-    @GetMapping("/chamados")
-    public String chamados(Model model, Principal principal) {
-        boolean tecnico = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+    @GetMapping({"/", "/chamados"})
+    public String painel(Model model, Authentication principal) {
+        boolean tecnico = principal.getAuthorities()
                 .stream().anyMatch(role -> "ROLE_TECHNICIAN".equals(role.getAuthority()));
-        // A página antiga também precisa respeitar o solicitante que entrou no sistema.
         List<Chamado> chamados = tecnico ? chamadoService.listarChamados()
                 : chamadoService.buscarPorUsuario(principal.getName());
-        model.addAttribute("chamados", chamados); // Passa a lista para o modelo
-        String fragment = "chamados :: content";
-        log.info("Carregando fragmento: {}", fragment); // Log para depuração
-        model.addAttribute("content", fragment);
-        return "chamados";
+        long resolvidos = chamados.stream().filter(chamado -> "RESOLVIDO".equalsIgnoreCase(chamado.getStatus())).count();
+        model.addAttribute("chamados", chamados.stream().sorted(Comparator.comparing(
+                Chamado::getDataAbertura, Comparator.nullsLast(Comparator.reverseOrder()))).toList());
+        model.addAttribute("pendentes", chamados.size() - resolvidos);
+        model.addAttribute("resolvidos", resolvidos);
+        model.addAttribute("usuario", principal.getName());
+        model.addAttribute("tecnico", tecnico);
+        model.addAttribute("versao", buildProperties.getVersion());
+        return "home";
     }
 
     @GetMapping("/clientes")

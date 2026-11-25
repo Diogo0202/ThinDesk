@@ -12,6 +12,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.bson.Document;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,6 +27,9 @@ class ChamadoServiceTest {
 
     @Mock
     private ChamadoRepository chamadoRepository;
+
+    @Mock
+    private MongoTemplate mongoTemplate;
 
     @InjectMocks
     private ChamadoService chamadoService;
@@ -96,8 +104,7 @@ class ChamadoServiceTest {
 
     @Test
     void resolverGravaTecnicoSolucaoEstadoEData() {
-        when(chamadoRepository.findById("ch-1")).thenReturn(Optional.of(chamado));
-        when(chamadoRepository.save(any(Chamado.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        prepararAtualizacaoMongo();
         LocalDateTime antes = LocalDateTime.now();
 
         Chamado resolvido = chamadoService.resolverChamado("ch-1", "tec-1", "Cabo substituído");
@@ -109,7 +116,7 @@ class ChamadoServiceTest {
         assertNotNull(resolvido.getDataResolucao());
         assertFalse(resolvido.getDataResolucao().isBefore(antes));
         assertFalse(resolvido.getDataResolucao().isAfter(depois));
-        verify(chamadoRepository).save(chamado);
+        verify(chamadoRepository, never()).save(any());
     }
 
     @Test
@@ -139,7 +146,7 @@ class ChamadoServiceTest {
         when(chamadoRepository.findById("ch-1")).thenReturn(Optional.of(chamado));
 
         assertThrows(IllegalStateException.class,
-                () -> chamadoService.atualizarChamado("ch-1", new Chamado()));
+                () -> chamadoService.atualizarChamado("ch-1", chamado));
 
         verify(chamadoRepository, never()).save(any());
     }
@@ -156,8 +163,7 @@ class ChamadoServiceTest {
         entrada.setUsuario("intruso");
         entrada.setStatus("RESOLVIDO");
         entrada.setTecnico("tec-2");
-        when(chamadoRepository.findById("ch-1")).thenReturn(Optional.of(chamado));
-        when(chamadoRepository.save(any(Chamado.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        prepararAtualizacaoMongo();
 
         Chamado atualizado = chamadoService.atualizarChamado("ch-1", entrada);
 
@@ -169,5 +175,27 @@ class ChamadoServiceTest {
         assertEquals(abertura, atualizado.getDataAbertura());
         assertNull(atualizado.getDataResolucao());
         assertNull(atualizado.getSolucao());
+    }
+
+    private void prepararAtualizacaoMongo() {
+        when(mongoTemplate.findAndModify(any(Query.class), any(Update.class),
+                any(FindAndModifyOptions.class), eq(Chamado.class))).thenAnswer(invocation -> {
+            Query filtro = invocation.getArgument(0);
+            assertEquals("ch-1", filtro.getQueryObject().getString("_id"));
+            assertTrue(((Document) filtro.getQueryObject().get("status")).containsKey("$not"));
+            assertTrue(invocation.<FindAndModifyOptions>getArgument(2).isReturnNew());
+            Update alteracoes = invocation.getArgument(1);
+            Document campos = (Document) alteracoes.getUpdateObject().get("$set");
+            if (campos.containsKey("descricao")) chamado.setDescricao(campos.getString("descricao"));
+            if (campos.containsKey("titulo")) chamado.setTitulo(campos.getString("titulo"));
+            if (campos.containsKey("tipo")) chamado.setTipo(campos.getString("tipo"));
+            if (campos.containsKey("tecnico")) chamado.setTecnico(campos.getString("tecnico"));
+            if (campos.containsKey("solucao")) chamado.setSolucao(campos.getString("solucao"));
+            if (campos.containsKey("status")) chamado.setStatus(campos.getString("status"));
+            if (campos.containsKey("dataResolucao")) chamado.setDataResolucao(campos.get("dataResolucao", LocalDateTime.class));
+            assertFalse(campos.containsKey("usuario"));
+            assertFalse(campos.containsKey("dataAbertura"));
+            return chamado;
+        });
     }
 }

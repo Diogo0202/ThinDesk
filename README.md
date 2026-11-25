@@ -2,6 +2,12 @@
 
 Aplicação Spring Boot com login por formulário, API REST de chamados e persistência no MongoDB. O mesmo login atende as páginas existentes e os quatro endpoints da API. Para testar a API no Postman ou Insomnia, selecione **Basic Auth**.
 
+## Versão beta
+
+A versão `1.0.0-beta.1` aparece no painel e é gerada a partir do `pom.xml`. A tag Git correspondente é `v1.0.0-beta.1`. O painel abre chamados, mostra os detalhes e permite registrar a solução com uma conta técnica. O solicitante vê os próprios chamados e o técnico vê a fila completa.
+
+O ThinDesk segue o [SemVer 2.0.0](https://semver.org/lang/pt-BR/). As revisões desta fase avançam como `1.0.0-beta.2`, `1.0.0-beta.3` e assim por diante. Depois de `1.0.0`, a versão de correção indica ajustes compatíveis, a menor indica novos recursos compatíveis e a maior indica mudanças incompatíveis na API. As mudanças ficam no [CHANGELOG](CHANGELOG.md).
+
 ## Objetivos da entrega
 
 - [x] Abrir chamado com título e descrição, registrando o usuário autenticado, a data e o status `ABERTO`.
@@ -54,3 +60,18 @@ O [vídeo entregue](docs/demo-thindesk.mp4) mostra as chamadas por um cliente HT
 ```
 
 Os testes automatizados validam as regras e as respostas HTTP. A prova de persistência real exige MongoDB ativo; o roteiro acima cobre essa etapa.
+
+## Vercel
+
+O [runtime de contêiner da Vercel](https://vercel.com/docs/functions/runtimes/container) detecta `Dockerfile.vercel` na raiz. A imagem empacota o Spring Boot com Java 21. O perfil `vercel` grava as sessões no mesmo MongoDB dos chamados para que uma nova instância reconheça o login.
+
+Defina estas variáveis no projeto antes de publicar:
+
+| Variável | Valor |
+| --- | --- |
+| `MONGODB_URI` | URI de um MongoDB remoto acessível pela Vercel, com permissão de leitura e escrita no banco da aplicação |
+| `MONGODB_DATABASE` | Nome do banco, com padrão `thindesk` |
+| `THINDESK_ADMIN_PASSWORD` | Senha da conta técnica `admin` |
+| `THINDESK_USER_USERNAME` e `THINDESK_USER_PASSWORD` | Credenciais da conta solicitante. Configure as duas para validar os dois perfis |
+
+Cadastre a URI e as senhas como variáveis sensíveis. Depois do deploy, entre como solicitante, abra um chamado e confirme que a conta técnica consegue resolvê-lo. Consulte novamente o chamado na conta solicitante para conferir o estado persistido.
