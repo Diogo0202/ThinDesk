@@ -2,6 +2,13 @@
 
 Aplicação Spring Boot com login por formulário, API REST de chamados e persistência no MongoDB. O mesmo login atende as páginas existentes e os quatro endpoints da API. Para testar a API no Postman ou Insomnia, selecione **Basic Auth**.
 
+## Acesso ao ThinDesk
+
+- [Abrir o aplicativo local](http://localhost:8080/login) após [iniciar o Spring Boot e o MongoDB](#executar).
+- [Assistir à demonstração](docs/demo-thindesk.mp4) das chamadas à API e da gravação no MongoDB.
+
+O beta aguarda publicação na Vercel. A URL pública será adicionada aqui após a validação do deploy. [Configuração para publicar na Vercel](#vercel)
+
 ## Versão beta
 
 A versão `1.0.0-beta.1` aparece no painel e é gerada a partir do `pom.xml`. A tag Git correspondente é `v1.0.0-beta.1`. O painel abre chamados, mostra os detalhes e permite registrar a solução com uma conta técnica. O solicitante vê os próprios chamados e o técnico vê a fila completa.
