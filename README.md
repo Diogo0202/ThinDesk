@@ -9,6 +9,22 @@ Aplicação Spring Boot com login por formulário, API REST de chamados e persis
 
 O beta aguarda publicação na Vercel. A URL pública será adicionada aqui após a validação do deploy. [Configuração para publicar na Vercel](#vercel)
 
+## Capturas do painel
+
+As imagens foram capturadas no ThinDesk `1.0.0-beta.1` com chamados fictícios.
+
+### Solicitante
+
+O formulário abre chamados. A lista mostra os pedidos da conta e a solução registrada pela equipe técnica.
+
+![Painel do solicitante com dois chamados pendentes e a solução de um chamado resolvido](docs/painel-solicitante.png)
+
+### Técnico
+
+A fila mostra os chamados de todas as contas. Ao abrir um chamado pendente, o técnico pode registrar a solução.
+
+![Painel técnico com a fila de chamados e o formulário para registrar uma solução](docs/painel-tecnico.png)
+
 ## Versão beta
 
 A versão `1.0.0-beta.1` aparece no painel e é gerada a partir do `pom.xml`. A tag Git correspondente é `v1.0.0-beta.1`. O painel abre chamados, mostra os detalhes e permite registrar a solução com uma conta técnica. O solicitante vê os próprios chamados e o técnico vê a fila completa.
